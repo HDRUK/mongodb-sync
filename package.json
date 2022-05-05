@@ -1,0 +1,24 @@
+{
+  "name": "mongo-sync",
+  "version": "1.0.0",
+  "description": "[mongo-sync](https://sheharyar.me/blog/sync-mongodb-local-and-production-heroku/) =================================================================================",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sheharyarn/mongo-sync.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sheharyarn/mongo-sync/issues"
+  },
+  "homepage": "https://github.com/sheharyarn/mongo-sync#readme",
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "lodash": "^4.17.21",
+    "mongodb": "^4.5.0"
+  }
+}

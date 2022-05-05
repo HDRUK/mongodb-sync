@@ -1,0 +1,21 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+
+config.yml
+
+# testing
+/coverage
+
+# production
+/build
+
+/tmp 
+
+# misc
+.DS_Store
+npm-debug.log*
+package-lock.json
+.env
+globalConfig.json
