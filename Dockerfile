@@ -8,7 +8,7 @@ WORKDIR /app
 # where available (npm@5+)
 COPY package*.json ./
 
-RUN npm install
+RUN npm install && npm cache clean --force
 # If you are building your code for production
 # RUN npm ci --only=production
 
@@ -19,5 +19,7 @@ RUN wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-debian92-x86
 
 COPY . .
 
-ENTRYPOINT ["/bin/bash"]
+EXPOSE 8080
+
+CMD ["npm", "start"] 
 

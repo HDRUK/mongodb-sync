@@ -1,8 +1,15 @@
 const fs = require("fs");
-var { MongoClient, ObjectId } = require("mongodb");
 var _ = require("lodash");
+const { exec } = require("child_process");
+var { MongoClient, ObjectId } = require("mongodb");
 
-var array = fs.readFileSync("teams.json").toString().split("\n");
+const express = require("express");
+const app = express();
+const port = 8080;
+
+require("dotenv").config();
+
+app.use(express.json());
 
 function transformObject(object, existingMembers, existingNotifications) {
   existingMembers = existingMembers
@@ -59,65 +66,94 @@ function transformObject(object, existingMembers, existingNotifications) {
   return object;
 }
 
-(async function () {
-  try {
-    MongoClient.connect(process.env.LOCAL_URI)
-      .then(async (client) => {
-        var db = client.db(process.env.LOCAL_DB);
-        await Promise.all(
-          array.map(async (i) => {
-            if (i) {
-              let obj = JSON.parse(i);
-              const options = { upsert: true };
-              try {
-                const query = { _id: ObjectId(obj._id.$oid) };
-                const findResult = await db
-                  .collection("teams")
-                  .find(query)
-                  .toArray();
-                if (!_.isEmpty(findResult)) {
-                  obj = transformObject(
-                    obj,
-                    findResult[0].members,
-                    findResult[0].notifications
-                  );
-                  const update = {
-                    $set: {
-                      members: obj.members,
-                      notifications: obj.notifications,
-                    },
-                  };
-                  try {
-                    await db
-                      .collection("teams")
-                      .updateOne(query, update, options);
+function bash(cmd) {
+  return new Promise((resolve, reject) => {
+    exec(cmd, (error, stdout, stderr) => {
+      if (error) {
+        console.log(error);
+      }
+      resolve(stdout ? stdout : stderr);
+    });
+  });
+}
 
-                    console.log("update");
-                  } catch (e) {
-                    console.log(obj._id.$oid);
-                    console.log(e);
+app.post("/", async (req, res) => {
+  const data = req.body;
+
+  command = `./mongo-sync.sh PROD_URI=${process.env.PROD_URI} LOCAL_URI=${
+    process.env.LOCAL_URI
+  } LOCAL_DB=${process.env.LOCAL_DB} COLLECTIONS=${data.collections.join(",")}`;
+
+  out = await bash(command);
+
+  console.log(out);
+
+  if (fs.existsSync("teams.json")) {
+    var array = fs.readFileSync("teams.json").toString().split("\n");
+
+    (async function () {
+      try {
+        MongoClient.connect(process.env.LOCAL_URI).then(async (client) => {
+          var db = client.db(process.env.LOCAL_DB);
+          await Promise.all(
+            array.map(async (i) => {
+              if (i) {
+                let obj = JSON.parse(i);
+                const options = { upsert: true };
+                try {
+                  const query = { _id: ObjectId(obj._id.$oid) };
+                  const findResult = await db
+                    .collection("teams")
+                    .find(query)
+                    .toArray();
+                  if (!_.isEmpty(findResult)) {
+                    obj = transformObject(
+                      obj,
+                      findResult[0].members,
+                      findResult[0].notifications
+                    );
+                    const update = {
+                      $set: {
+                        members: obj.members,
+                        notifications: obj.notifications,
+                      },
+                    };
+                    try {
+                      await db
+                        .collection("teams")
+                        .updateOne(query, update, options);
+
+                      console.log("update");
+                    } catch (e) {
+                      console.log(obj._id.$oid);
+                      console.log(e);
+                    }
+                  } else {
+                    try {
+                      obj = transformObject(obj);
+                      obj._id = ObjectId(obj._id.$oid);
+                      await db.collection("teams").insertOne(obj);
+                      console.log("insert");
+                    } catch (e) {
+                      console.log(e);
+                    }
                   }
-                } else {
-                  try {
-                    obj = transformObject(obj);
-                    obj._id = ObjectId(obj._id.$oid);
-                    await db.collection("teams").insertOne(obj);
-                    console.log("insert");
-                  } catch (e) {
-                    console.log(e);
-                  }
-                }
-              } catch (e) {}
-            }
-          })
-        );
-        process.exit(0);
-      })
-      .catch((err) => {
+                } catch (e) {}
+              }
+            })
+          );
+        });
+      } catch (err) {
         console.log(err);
-        process.exit(1);
-      });
-  } catch {
-  } finally {
+        res.status(500);
+      } finally {
+        fs.unlinkSync("teams.json");
+      }
+    })();
   }
-})();
+  return res.status(200).send();
+});
+
+app.listen(port, () => {
+  console.log(`App listening on port ${port}`);
+});

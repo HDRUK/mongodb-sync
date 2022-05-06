@@ -5,9 +5,6 @@ set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 set -o errexit   # exit the script if any statement returns a non-true return value
 
-
-
-
 trap 'error ${LINENO}' ERR
 
 function usage_error {
@@ -62,9 +59,11 @@ function pull {
     banner
     check_config
   
-    declare -a collections=(`echo $COLLECTIONS | sed 's/,/\n/g'`)
+    # declare -a collections=(`echo $COLLECTIONS | sed 's/,/\n/g'`)
 
-    
+    collections=($(echo "$COLLECTIONS" | tr ',' '\n'))
+
+
     for collection in "${collections[@]}"
     do
         echo "exporting $collection"
@@ -77,13 +76,11 @@ function pull {
    
         do  
             if [ "$collection" != "teams" ]; then
+                echo "importing $collection"
                 mongoimport --uri=$LOCAL_URI --collection=$collection --file $collection.json --mode=merge
                 rm -rf $collection.json
             fi  
         done
-   
-    LOCAL_URI=$LOCAL_URI LOCAL_DB=$LOCAL_DB node index.js
-    rm -rf teams.json
     success_msg
 
 }
