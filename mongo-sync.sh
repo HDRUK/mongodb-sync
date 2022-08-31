@@ -9,7 +9,7 @@ trap 'error ${LINENO}' ERR
 
 function usage_error {
     echo mongo-sync: "$1"
-    echo "usage: PROD_URI=mongodb+srv://user:pwd@host/db LOCAL_URI=mongodb+srv://user:pwd@host/db LOCAL_DB=localdb COLLECTIONS=users,teams,tools"
+    echo "usage: PROD_URI=mongodb+srv://user:pwd@host/db LOCAL_URI=mongodb+srv://user:pwd@host/db LOCAL_DB=localdb COLLECTIONS=users,teams"
     echo ""
     exit
 }
